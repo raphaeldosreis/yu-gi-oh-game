@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yu-Gi-Oh! Master Duel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+            color: #d1d1d1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #1a1a1a;
+            position: relative;
+        }
+
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url(imagens/Yu\ Gi\ Oh!\ Anime\ Wallpaper.jpg);
+            background-size: cover;
+            background-position: center;
+            filter: blur(5px);
+            z-index: 1;
+        }
+
+        .duel-board-3d {
+            perspective: 800px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .board-surface {
+            width: 80%;
+            height: 80%;
+            background: rgba(0, 0, 0, 0.7);
+            border: 4px solid #8d623d;
+            border-radius: 1rem;
+            transform: rotateX(60deg) scale(1.1);
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            transform-origin: center;
+        }
+
+        .field-zones {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            transform: rotateX(-60deg) scale(0.9);
+            transform-origin: center;
+        }
+
+        .player-field, .opponent-field {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+        }
+        
+        .monster-zones, .spell-trap-zones, .extra-graveyard {
+            display: flex;
+            gap: 15px;
+        }
+
+        .zone {
+            width: 100px;
+            height: 170px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #8d623d;
+            border-radius: 0.5rem;
+            position: relative;
+        }
+
+        .zone.drag-over {
+            border: 2px solid #3498db;
+            background: rgba(52, 152, 219, 0.3);
+        }
+
+       
+        .deck-zone {
+            width: 110px;
+            height: 150px;
+            position: relative;
+            cursor: pointer;
+            border: none;
+            background-image: url(imagens/3da39cea425e1fc2b8c7b01d7b0d6c5c.jpg);
+            background-size: cover;
+            background-position: center;
+            border: 2px dashed #8d623d;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .deck-zone span {
+            position: relative;
+            z-index: 2;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 5px;
+            font-size: 0.8em;
+            text-align: center;
+        }
+
+
+        /* Ajuste para o cemitério e deck do oponente */
+        .opponent-deck-graveyard-pos {
+            display: flex;
+            gap: 40px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            transform: rotate(180deg);
+        }
+
+        
+        .player-deck-graveyard {
+            display: flex;
+            gap: 80px;
+            position: absolute;
+            bottom: 150px;
+            right: 20px;
+            z-index: 3
+        }
+
+        .life-points-ui {
+            position: absolute;
+            width: 200px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            z-index: 3;
+        }
+
+        .player-lp-ui {
+            bottom: 20px;
+            left: 20px;
+        }
+
+        .opponent-lp-ui {
+            top: 20px;
+            right: 20px;
+        }
+
+        .graveyard-zone {
+            width: 80px;
+            height: 110px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #5a5a5a;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.8em;
+        }
+
+        /* Card Preview Modal */
+        .card-preview-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ffcc00;
+            border-radius: 10px;
+            padding: 10px;
+            display: none; /* Initially hidden */
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .card-preview-modal img {
+            width: 90%;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid #ffcc00;
+        }
+
+        .player-hand {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+            z-index: 4;
+        }
+
+        .hand-card {
+            width: 80px;
+            height: 110px;
+            background: #2a2a2a;
+            border: 2px solid #fff;
+            border-radius: 0.5rem;
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .hand-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .turn-button {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            z-index: 3;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        .turn-button:hover {
+            background: #2980b9;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .card-in-field {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: rotateX(0deg); /* Reset rotation for card content */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        /* Estilo para a carta virada para baixo */
+        .card-face-down {
+            background-image: url('https://googleusercontent.com/file_content/1');
+            background-size: cover;
+            background-position: center;
+            border: 2px solid #fff;
+            border-radius: 0.5rem;
+        }
+
+        /* Classe para a animação da compra de carta */
+        .card-animate-draw {
+            position: absolute;
+            width: 80px;
+            height: 110px;
+            bottom: 20px;
+            left: calc(50% - 40px); /* Posição inicial no centro do deck */
+            z-index: 100;
+            transition: all 0.5s ease-in-out;
+            transform: translateX(-50%) rotate(0deg);
+            opacity: 1;
+        }
+        
+        .log-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 250px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #8d623d;
+            border-radius: 8px;
+            z-index: 3;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 0.8em;
+        }
+
+        .log-message {
+            margin-bottom: 5px;
+        }
+
+        /* Animação para sacar cartas */
+        @keyframes draw-card-animation {
+            from { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+            to { transform: translateY(-50px) rotate(-10deg) scale(1.1); opacity: 0; }
+        }
+        
+        /* Animação para colocar cartas em campo */
+        @keyframes play-card-animation {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(-10px); opacity: 1; }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Novo modal para fim de jogo */
+        #end-game-modal {
+            display: none;
+            position: fixed;
+            z-index: 200;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        #end-game-modal .modal-content {
+            padding: 40px;
+            border-width: 4px;
+            border-color: #ffcc00;
+        }
+
+        #end-game-modal h2 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ffcc00;
+            margin-bottom: 20px;
+        }
+
+        #end-game-modal button {
+            padding: 15px 30px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #end-game-modal button:hover {
+            background-color: #2980b9;
+        }
+
+        .modal-content {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border: 2px solid #ffcc00;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .attack-mode {
+            transform: rotateZ(0deg);
+        }
+
+        .defense-mode {
+            transform: rotateZ(90deg);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="background-image"></div>
+        
+        <!-- Player LP -->
+        <div class="life-points-ui player-lp-ui">
+            LP: <span id="player-lp">8000</span>
+        </div>
+
+        <!-- Opponent LP -->
+        <div class="life-points-ui opponent-lp-ui">
+            LP: <span id="opponent-lp">8000</span>
+        </div>
+
+        <!-- Card Preview Modal -->
+        <div id="card-preview-modal" class="card-preview-modal">
+            <h3 class="text-lg font-bold mb-2">Detalhes da Carta</h3>
+            <div id="card-preview-content" class="w-full flex-grow flex items-center justify-content-center text-center text-gray-400">
+                <!-- Card details will be rendered here -->
+            </div>
+            <button id="close-preview-btn" class="mt-4 px-4 py-2 bg-red-600 text-white rounded-md">Fechar</button>
+        </div>
+
+        <!-- Log Panel -->
+        <div id="log-panel" class="log-panel"></div>
+
+        <!-- Turn Button -->
+        <button id="turn-button" class="turn-button">Iniciar Duelo</button>
+
+        <!-- The 3D Duel Board -->
+        <div class="duel-board-3d">
+            <div class="board-surface">
+                <div class="field-zones">
+                    <!-- Opponent's Field -->
+                    <div class="opponent-field">
+                        <div class="spell-trap-zones" id="opponent-spell-trap-zone">
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                        </div>
+                        <div class="monster-zones" id="opponent-monster-zone">
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                        </div>
+                    </div>
+
+                    <!-- Middle Zone (Deck, Graveyard, etc) -->
+                    <div class="opponent-deck-graveyard-pos">
+                        <div class="deck-zone" id="opponent-deck"><span>Deck Oponente</span></div>
+                        <div class="graveyard-zone" id="opponent-graveyard">Cemitério Oponente (0)</div>
+                    </div>
+
+                    <!-- Player's Field -->
+                    <div class="player-field">
+                        <div class="monster-zones" id="player-monster-zone">
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                        </div>
+                        <div class="spell-trap-zones" id="player-spell-trap-zone">
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                            <div class="zone"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        
+        <!-- Player Deck & Graveyard -->
+        <div class="player-deck-graveyard">
+            <div class="deck-zone" id="player-deck"><span>Seu Deck</span></div>
+            <div class="graveyard-zone" id="player-graveyard">Seu Cemitério (0)</div>
+        </div>
+
+        <!-- Player's Hand -->
+        <div id="player-hand" class="player-hand">
+            <!-- Hand cards will be rendered here -->
+        </div>
+
+        <!-- Modal para Invocação de Monstro -->
+        <div id="summon-modal" class="modal">
+            <div class="modal-content">
+                <p>Escolha a posição de invocação:</p>
+                <div class="modal-buttons">
+                    <button id="summon-attack">Ataque</button>
+                    <button id="summon-defense">Defesa</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Fim de Jogo -->
+        <div id="end-game-modal" class="modal">
+            <div class="modal-content">
+                <h2 id="end-game-message"></h2>
+                <button id="new-duel-button">Novo Duelo</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Data structure for the cards
+        const cards = [
+            { id: 1, name: "Dark Magician", type: "monster", level: 7, attack: 2500, defense: 2100, image: "https://ygoprodeck.com/pics/46986414.jpg" },
+            { id: 2, name: "Blue-Eyes White Dragon", type: "monster", level: 8, attack: 3000, defense: 2500, image: "https://ygoprodeck.com/pics/89631139.jpg" },
+            { id: 3, name: "Exodia the Forbidden One", type: "monster", level: 3, attack: 1000, defense: 1000, image: "https://ygoprodeck.com/pics/33396948.jpg" },
+            { id: 4, name: "Summoned Skull", type: "monster", level: 6, attack: 2500, defense: 1200, image: "https://ygoprodeck.com/pics/70781052.jpg" },
+            { id: 5, name: "Gaia The Fierce Knight", type: "monster", level: 7, attack: 2300, defense: 2100, image: "https://images.ygoprodeck.com/images/cards/97204936.jpg" },
+            { id: 6, name: "Celtic Guardian", type: "monster", level: 4, attack: 1400, defense: 1200, image: "https://images.ygoprodeck.com/images/cards/91152256.jpg" },
+            { id: 7, name: "Mystical Elf", type: "monster", level: 4, attack: 800, defense: 2000, image: "https://ygoprodeck.com/pics/15025844.jpg" },
+            { id: 8, name: "Winged Dragon, Guardian of the Fortress", type: "monster", level: 4, attack: 1400, defense: 1200, image: "https://images.ygoprodeck.com/images/cards/10000010.jpg" },
+            { id: 9, name: "Monster Reborn", type: "spell", level: null, attack: null, defense: null, image: "https://ygoprodeck.com/pics/83764718.jpg" },
+            { id: 10, name: "Pot of Greed", type: "spell", level: null, attack: null, defense: null, image: "https://ygoprodeck.com/pics/55144522.jpg" },
+            { id: 11, name: "Mirror Force", type: "trap", level: null, attack: null, defense: null, image: "https://ygoprodeck.com/pics/44095762.jpg" }
+        ];
+
+        // Game state variables
+        const gameState = {
+            playerLP: 8000,
+            opponentLP: 8000,
+            playerDeck: [],
+            opponentDeck: [],
+            playerHand: [],
+            playerGraveyard: [],
+            opponentGraveyard: [],
+            playerMonsterField: [],
+            playerSpellTrapField: [],
+            opponentMonsterField: [],
+            opponentSpellTrapField: [],
+            isPlayerTurn: true,
+            canNormalSummon: true, // Flag to limit one normal summon per turn
+            selectedCard: null
+        };
+
+        let draggedCardData = null;
+
+        // DOM elements
+        const playerLPElement = document.getElementById('player-lp');
+        const opponentLPElement = document.getElementById('opponent-lp');
+        const playerHandElement = document.getElementById('player-hand');
+        const playerMonsterZone = document.getElementById('player-monster-zone');
+        const opponentMonsterZone = document.getElementById('opponent-monster-zone');
+        const playerSpellTrapZone = document.getElementById('player-spell-trap-zone');
+        const opponentSpellTrapZone = document.getElementById('opponent-spell-trap-zone');
+        const turnButton = document.getElementById('turn-button');
+        const cardPreviewModal = document.getElementById('card-preview-modal');
+        const cardPreviewContent = document.getElementById('card-preview-content');
+        const closePreviewBtn = document.getElementById('close-preview-btn');
+        const playerDeckEl = document.getElementById('player-deck');
+        const opponentDeckEl = document.getElementById('opponent-deck');
+        const playerGraveyardEl = document.getElementById('player-graveyard');
+        const opponentGraveyardEl = document.getElementById('opponent-graveyard');
+        const logPanel = document.getElementById('log-panel');
+        const summonModal = document.getElementById('summon-modal');
+        const summonAttackBtn = document.getElementById('summon-attack');
+        const summonDefenseBtn = document.getElementById('summon-defense');
+        const endGameModal = document.getElementById('end-game-modal');
+        const endGameMessage = document.getElementById('end-game-message');
+        const newDuelButton = document.getElementById('new-duel-button');
+
+
+        // Functions
+        
+        // Empties an array and returns its contents
+        function emptyAndReturn(arr) {
+            const temp = [...arr];
+            arr.length = 0;
+            return temp;
+        }
+
+        // Shuffles an array (Fisher-Yates algorithm)
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Initializes the decks
+        function initializeDecks() {
+            gameState.playerDeck = [...cards, ...cards, ...cards, ...cards];
+            gameState.opponentDeck = [...cards, ...cards, ...cards, ...cards];
+            shuffle(gameState.playerDeck);
+            shuffle(gameState.opponentDeck);
+        }
+
+        // Renders a card on the hand or field
+        function createCardElement(card, position = 'attack', isPlayer) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card-in-field';
+            if (position === 'defense') {
+                cardEl.classList.add('defense-mode');
+            } else {
+                cardEl.classList.add('attack-mode');
+            }
+
+            // Se for o oponente, mostra a carta virada para baixo, a menos que a posição seja 'face-up'
+            if (!isPlayer && position !== 'face-up') {
+                cardEl.classList.add('card-face-down');
+            } else {
+                cardEl.innerHTML = `<img src="${card.image}" alt="${card.name}" class="w-full h-full object-cover">`;
+            }
+
+            // Add event listener to display card preview on click for cards on the field
+            cardEl.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                displayCardPreview(card);
+            });
+            return cardEl;
+        }
+
+        // Renders player's hand cards
+        function renderHand() {
+            playerHandElement.innerHTML = '';
+            gameState.playerHand.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'hand-card animate__animated animate__fadeInUp';
+                cardEl.style.zIndex = index;
+                cardEl.innerHTML = `
+                    <img src="${card.image}" alt="${card.name}">
+                `;
+                cardEl.draggable = true;
+                cardEl.addEventListener('click', () => displayCardPreview(card));
+                cardEl.addEventListener('dragstart', (e) => {
+                    draggedCardData = { card, index };
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, cardIndex: index }));
+                });
+
+                playerHandElement.appendChild(cardEl);
+            });
+        }
+        
+        // Draws a card from the deck with animation
+        function drawCard(isPlayer) {
+    const deck = isPlayer ? gameState.playerDeck : gameState.opponentDeck;
+
+    if (deck.length > 0) {
+        const card = deck.pop();
+
+        // Cria a animação da carta
+        const animatedCardEl = document.createElement('div');
+        animatedCardEl.className = 'card-face-down card-animate-draw';
+        document.body.appendChild(animatedCardEl);
+
+        // Posição do deck
+        const deckEl = isPlayer ? playerDeckEl : opponentDeckEl;
+        const deckRect = deckEl.getBoundingClientRect();
+
+        animatedCardEl.style.left = `${deckRect.left}px`;
+        animatedCardEl.style.top = `${deckRect.top}px`;
+
+        // Ao fim da animação
+        setTimeout(() => {
+            document.body.removeChild(animatedCardEl);
+
+            if (isPlayer) {
+                gameState.playerHand.push(card); 
+                renderHand();                    
+                checkExodiaWinCondition();
+            }
+
+            updateDeckInfo();
+            addLogMessage(`${isPlayer ? 'Você' : 'O Oponente'} sacou uma carta.`);
+        }, 500);
+
+    } else {
+        addLogMessage(`${isPlayer ? 'Seu' : 'O Oponente'} deck está vazio!`);
+        if (isPlayer) endGame("Você perdeu! Deck vazio.", false);
+        else endGame("Você venceu! Deck do oponente vazio.", true);
+    }
+}
+
+
+        // Renders the duel field
+        function renderField(isPlayer) {
+            const monsterField = isPlayer ? gameState.playerMonsterField : gameState.opponentMonsterField;
+            const monsterFieldElement = isPlayer ? playerMonsterZone : opponentMonsterZone;
+            const spellTrapField = isPlayer ? gameState.playerSpellTrapField : gameState.opponentSpellTrapField;
+            const spellTrapFieldElement = isPlayer ? playerSpellTrapZone : opponentSpellTrapZone;
+            
+            monsterFieldElement.innerHTML = '';
+            monsterField.forEach((slot, index) => {
+                const zone = document.createElement('div');
+                zone.className = 'zone';
+                if (slot.card) {
+                    // Pass isPlayer to createCardElement to render correctly
+                    const cardEl = createCardElement(slot.card, slot.position, isPlayer);
+                    zone.appendChild(cardEl);
+                }
+                // Add drag and drop listeners for player's zones
+                if (isPlayer) {
+                    zone.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        zone.classList.add('drag-over');
+                    });
+                    zone.addEventListener('dragleave', () => {
+                        zone.classList.remove('drag-over');
+                    });
+                    zone.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        zone.classList.remove('drag-over');
+                        handleCardDrop(draggedCardData.card, draggedCardData.index, 'monster', index);
+                    });
+                }
+                monsterFieldElement.appendChild(zone);
+            });
+
+            spellTrapFieldElement.innerHTML = '';
+            spellTrapField.forEach((slot, index) => {
+                const zone = document.createElement('div');
+                zone.className = 'zone';
+                if (slot.card) {
+                    // Pass isPlayer to createCardElement to render correctly
+                    const cardEl = createCardElement(slot.card, slot.position, isPlayer);
+                    zone.appendChild(cardEl);
+                }
+                // Add drag and drop listeners for player's zones
+                if (isPlayer) {
+                    zone.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        zone.classList.add('drag-over');
+                    });
+                    zone.addEventListener('dragleave', () => {
+                        zone.classList.remove('drag-over');
+                    });
+                    zone.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        zone.classList.remove('drag-over');
+                        handleCardDrop(draggedCardData.card, draggedCardData.index, 'spell-trap', index);
+                    });
+                }
+                spellTrapFieldElement.appendChild(zone);
+            });
+        }
+
+        // Handles the card drop event
+        function handleCardDrop(card, cardIndexInHand, zoneType, zoneIndex) {
+            if (!gameState.isPlayerTurn || !gameState.canNormalSummon) {
+                addLogMessage("Você só pode jogar uma carta por turno.");
+                return;
+            }
+            if (card.level >= 5) {
+                
+                handleTributeSummon(card, cardIndexInHand, zoneIndex);
+            } else if (zoneType === 'monster') {
+                if (card.type !== 'monster') {
+                    addLogMessage("Você só pode invocar monstros na zona de monstro!");
+                    return;
+                }
+                if (gameState.playerMonsterField[zoneIndex].card !== null) {
+                    addLogMessage("Esta zona já está ocupada.");
+                    return;
+                }
+                summonModal.style.display = 'flex';
+                gameState.selectedCard = { card, cardIndexInHand, isMonster: true, zoneIndex };
+            } else if (zoneType === 'spell-trap') {
+                if (card.type !== 'spell' && card.type !== 'trap') {
+                    addLogMessage("Você só pode colocar cartas de magia ou armadilha nesta zona.");
+                    return;
+                }
+                if (gameState.playerSpellTrapField[zoneIndex].card !== null) {
+                    addLogMessage("Esta zona já está ocupada.");
+                    return;
+                }
+                gameState.playerHand.splice(cardIndexInHand, 1);
+                gameState.playerSpellTrapField[zoneIndex] = { card, position: 'set' };
+                addLogMessage(`Você ativou ou baixou ${card.name}.`);
+                renderField(true);
+                renderHand();
+                gameState.canNormalSummon = false;
+                turnButton.disabled = false;
+                turnButton.textContent = 'Passar Turno';
+            }
+        }
+
+        // Handles tribute summon logic
+        function handleTributeSummon(card, cardIndexInHand, zoneIndex) {
+            const tributeCount = card.level >= 7 ? 2 : 1;
+            const availableMonsters = gameState.playerMonsterField.filter(slot => slot.card !== null);
+            if (availableMonsters.length < tributeCount) {
+                addLogMessage(`Precisa de ${tributeCount} tributos para ${card.name}. Não há monstros suficientes no campo.`);
+                return;
+            }
+            
+            for (let i = 0; i < tributeCount; i++) {
+                const monsterIndex = gameState.playerMonsterField.findIndex(slot => slot.card !== null);
+                if (monsterIndex !== -1) {
+                    
+                    gameState.playerGraveyard.push(gameState.playerMonsterField[monsterIndex].card);
+                    gameState.playerMonsterField[monsterIndex] = { card: null, position: null };
+                }
+            }
+            // Perform summon
+            gameState.playerHand.splice(cardIndexInHand, 1);
+            gameState.playerMonsterField[zoneIndex] = { card, position: 'attack' };
+            addLogMessage(`Você invocou por tributo ${card.name} em Posição de Ataque!`);
+            gameState.canNormalSummon = false;
+            renderField(true);
+            renderHand();
+            turnButton.disabled = false;
+            turnButton.textContent = 'Passar Turno';
+        }
+
+        // Updates deck and graveyard information
+        function updateDeckInfo() {
+            playerDeckEl.querySelector('span').textContent = `Seu Deck (${gameState.playerDeck.length})`;
+            opponentDeckEl.querySelector('span').textContent = `Deck Oponente (${gameState.opponentDeck.length})`;
+            playerGraveyardEl.textContent = `Seu Cemitério (${gameState.playerGraveyard.length})`;
+            opponentGraveyardEl.textContent = `Cemitério Oponente (${gameState.opponentGraveyard.length})`;
+        }
+
+        // Displays card preview in a modal
+        function displayCardPreview(card) {
+            cardPreviewContent.innerHTML = `
+                <div class="card p-2 w-full h-auto bg-gray-800 border-2 border-yellow-600 rounded-lg">
+                    <img src="${card.image}" alt="${card.name}" class="rounded-md w-full h-full object-cover">
+                    <div class="text-center">
+                        <h3 class="text-sm font-bold text-yellow-500">${card.name}</h3>
+                        ${card.type === 'monster' ? `<p class="text-[0.6rem] text-gray-400 mt-1">ATK/${card.attack} DEF/${card.defense}</p>` : ''}
+                    </div>
+                </div>
+            `;
+            cardPreviewModal.style.display = 'flex';
+        }
+
+        // Hides card preview modal
+        function hideCardPreview() {
+            cardPreviewModal.style.display = 'none';
+        }
+
+        // Adds a message to the game log
+        function addLogMessage(message) {
+            const messageEl = document.createElement('p');
+            messageEl.className = 'log-message';
+            messageEl.textContent = message;
+            logPanel.prepend(messageEl);
+            if (logPanel.children.length > 5) {
+                logPanel.removeChild(logPanel.lastChild);
+            }
+        }
+
+        // Generic function to handle battle logic
+        function performBattle(attackingField, defendingField, attackingPlayerName, defendingPlayerName, defendingPlayerIsYou) {
+            addLogMessage(`Início da Batalha de ${attackingPlayerName}.`);
+            const attackingMonsters = attackingField.filter(slot => slot.card !== null && slot.position === 'attack');
+            const defendingMonsters = defendingField.filter(slot => slot.card !== null);
+
+            if (attackingMonsters.length > 0) {
+                const attackerSlot = attackingMonsters[0];
+                const attacker = attackerSlot.card;
+                const defenderSlot = defendingMonsters[0];
+                
+                if (defenderSlot) {
+                    
+                    if (defendingPlayerIsYou) {
+                        defendingField[defendingField.indexOf(defenderSlot)].position = 'face-up';
+                        renderField(true);
+                    } else {
+                        defendingField[defendingField.indexOf(defenderSlot)].position = 'face-up';
+                        renderField(false);
+                    }
+                    const defender = defenderSlot.card;
+
+                    addLogMessage(`${attackingPlayerName} ataca o monstro de ${defendingPlayerName}!`);
+                    addLogMessage(`Monstros: ${attacker.name} (${attacker.attack} ATK) vs. ${defender.name} (${defender.defense} DEF)`);
+
+                    const attackerAtk = attacker.attack;
+                    const defenderAtk = defender.attack;
+                    const defenderDef = defender.defense;
+                    const defenderPos = defenderSlot.position;
+
+                    // Lógica de batalha
+                    if (defenderPos === 'attack') {
+                        if (attackerAtk > defenderAtk) {
+                             const damage = attackerAtk - defenderAtk;
+                             if (defendingPlayerIsYou) gameState.playerLP -= damage;
+                             else gameState.opponentLP -= damage;
+                             addLogMessage(`${attacker.name} destrói ${defender.name}! ${defendingPlayerName} perde ${damage} LP.`);
+                             
+                             if (defendingPlayerIsYou) gameState.playerGraveyard.push(defender);
+                             else gameState.opponentGraveyard.push(defender);
+                             
+                             const defenderIndex = defendingField.indexOf(defenderSlot);
+                             defendingField[defenderIndex] = { card: null, position: null };
+                        } else if (attackerAtk < defenderAtk) {
+                             const damage = defenderAtk - attackerAtk;
+                             if (defendingPlayerIsYou) gameState.opponentLP -= damage;
+                             else gameState.playerLP -= damage;
+                             addLogMessage(`${defender.name} destrói ${attacker.name}! ${attackingPlayerName} perde ${damage} LP.`);
+                             
+                             if (defendingPlayerIsYou) gameState.opponentGraveyard.push(attacker);
+                             else gameState.playerGraveyard.push(attacker);
+
+                             const attackerIndex = attackingField.indexOf(attackerSlot);
+                             attackingField[attackerIndex] = { card: null, position: null };
+                        } else {
+                             addLogMessage(`Os monstros se destroem mutuamente! Nenhum dano é causado.`);
+                             if (defendingPlayerIsYou) gameState.playerGraveyard.push(defender);
+                             else gameState.opponentGraveyard.push(defender);
+
+                             if (defendingPlayerIsYou) gameState.opponentGraveyard.push(attacker);
+                             else gameState.playerGraveyard.push(attacker);
+                             
+                             const attackerIndex = attackingField.indexOf(attackerSlot);
+                             attackingField[attackerIndex] = { card: null, position: null };
+                             const defenderIndex = defendingField.indexOf(defenderSlot);
+                             defendingField[defenderIndex] = { card: null, position: null };
+                        }
+                    } else if (defenderPos === 'defense') {
+                        if (attackerAtk > defenderDef) {
+                            addLogMessage(`${attacker.name} destrói ${defender.name} em posição de defesa!`);
+                            if (defendingPlayerIsYou) gameState.playerGraveyard.push(defender);
+                            else gameState.opponentGraveyard.push(defender);
+
+                            const defenderIndex = defendingField.indexOf(defenderSlot);
+                            defendingField[defenderIndex] = { card: null, position: null };
+                        } else if (attackerAtk < defenderDef) {
+                            const damage = defenderDef - attackerAtk;
+                            if (defendingPlayerIsYou) gameState.opponentLP -= damage;
+                            else gameState.playerLP -= damage;
+                            addLogMessage(`${defender.name} em posição de defesa resiste ao ataque! ${attackingPlayerName} perde ${damage} LP.`);
+                        } else {
+                            addLogMessage(`O ataque de ${attacker.name} foi igual à defesa de ${defender.name}! Nenhum dano é causado.`);
+                        }
+                    }
+                    
+                    if (defendingPlayerIsYou) renderField(true);
+                    else renderField(false);
+
+                } else {
+                    const damage = attacker.attack;
+                    if (defendingPlayerIsYou) {
+                        gameState.playerLP -= damage;
+                    } else {
+                        gameState.opponentLP -= damage;
+                    }
+                    addLogMessage(`Ataque direto de ${attacker.name}! ${defendingPlayerName} perde ${damage} LP.`);
+                }
+            } else {
+                addLogMessage(`${attackingPlayerName} não tem monstros para atacar.`);
+            }
+            
+            updateLP();
+            updateDeckInfo();
+            checkWinCondition();
+        }
+
+        // Checks for Exodia win condition
+        function checkExodiaWinCondition() {
+            const exodiaParts = [101, 102, 103, 104, 105];
+            const hasAllParts = exodiaParts.every(partId => gameState.playerHand.some(card => card.id === partId));
+            if (hasAllParts) {
+                endGame("Você venceu! Exodia, o Proibido!", true);
+            }
+        }
+
+        // Opponent's turn logic
+        function opponentTurn() {
+            turnButton.disabled = true;
+            addLogMessage("É o turno do Oponente.");
+
+            // Sequência de fases do oponente
+            setTimeout(() => {
+                addLogMessage("Draw Phase do Oponente.");
+                drawCard(false);
+            }, 1000);
+
+            setTimeout(() => {
+                addLogMessage("Standby Phase do Oponente.");
+            }, 2000);
+            
+            setTimeout(() => {
+                addLogMessage("Main Phase 1 do Oponente.");
+                const emptySlotIndex = gameState.opponentMonsterField.findIndex(slot => slot.card === null);
+                
+                // AI logic: Find monster to summon, prioritizing one that doesn't need a tribute
+                let monsterToSummon = gameState.opponentDeck.find(card => card.type === 'monster' && card.level < 5);
+                let isTributeSummon = false;
+                
+                if (!monsterToSummon) {
+                    const tributeMonsters = gameState.opponentDeck.filter(card => card.type === 'monster' && card.level >= 5);
+                    if (tributeMonsters.length > 0) {
+                        const availableTributes = gameState.opponentMonsterField.filter(slot => slot.card !== null).length;
+                        const cardLevel = tributeMonsters[0].level;
+                        const requiredTributes = cardLevel >= 7 ? 2 : 1;
+                        if (availableTributes >= requiredTributes) {
+                            monsterToSummon = tributeMonsters[0];
+                            isTributeSummon = true;
+                        }
+                    }
+                }
+
+                if (emptySlotIndex !== -1 && monsterToSummon) {
+                    const cardIndexInDeck = gameState.opponentDeck.indexOf(monsterToSummon);
+                    gameState.opponentDeck.splice(cardIndexInDeck, 1);
+                    
+                    if (isTributeSummon) {
+                        const requiredTributes = monsterToSummon.level >= 7 ? 2 : 1;
+                        for (let i = 0; i < requiredTributes; i++) {
+                            const monsterIndex = gameState.opponentMonsterField.findIndex(slot => slot.card !== null);
+                            if (monsterIndex !== -1) {
+                                gameState.opponentGraveyard.push(gameState.opponentMonsterField[monsterIndex].card);
+                                gameState.opponentMonsterField[monsterIndex] = { card: null, position: null };
+                            }
+                        }
+                        addLogMessage(`O Oponente sacrificou ${requiredTributes} monstro(s) para invocar por tributo ${monsterToSummon.name}.`);
+                    }
+
+                    gameState.opponentMonsterField[emptySlotIndex] = { card: monsterToSummon, position: 'attack' };
+                    renderField(false);
+                    addLogMessage(`O Oponente invocou ${monsterToSummon.name} em Posição de Ataque.`);
+                }
+                
+                // Oponente joga carta de magia/armadilha se puder
+                const emptySpellTrapSlotIndex = gameState.opponentSpellTrapField.findIndex(slot => slot.card === null);
+                const spellTrapInDeck = gameState.opponentDeck.find(card => card.type === 'spell' || card.type === 'trap');
+                
+                if(emptySpellTrapSlotIndex !== -1 && spellTrapInDeck) {
+                    const cardIndexInDeck = gameState.opponentDeck.indexOf(spellTrapInDeck);
+                    gameState.opponentDeck.splice(cardIndexInDeck, 1);
+                    gameState.opponentSpellTrapField[emptySpellTrapSlotIndex] = { card: spellTrapInDeck, position: 'set' };
+                    renderField(false);
+                    addLogMessage(`O Oponente baixou uma carta de Magia/Armadilha.`);
+                }
+
+            }, 3000);
+            
+            // Opponent's Battle Phase
+            setTimeout(() => {
+                performBattle(gameState.opponentMonsterField, gameState.playerMonsterField, 'O Oponente', 'Você', true);
+            }, 4000);
+            
+            // Opponent's Main Phase 2
+            setTimeout(() => {
+                addLogMessage("Main Phase 2 do Oponente.");
+            }, 5000);
+            
+            // Opponent's End Phase
+            setTimeout(() => {
+                addLogMessage("Fim do turno do Oponente.");
+                gameState.isPlayerTurn = true;
+                gameState.canNormalSummon = true;
+                turnButton.disabled = false;
+                turnButton.textContent = 'Passar Turno';
+                addLogMessage("É o seu turno. Arraste uma carta para o campo.");
+            }, 6000);
+        }
+
+        // Updates LP display
+        function updateLP() {
+            playerLPElement.textContent = gameState.playerLP;
+            opponentLPElement.textContent = gameState.opponentLP;
+        }
+
+        // Checks win/loss condition
+        function checkWinCondition() {
+            if (gameState.playerLP <= 0) {
+                endGame("Você perdeu!", false);
+            } else if (gameState.opponentLP <= 0) {
+                endGame("Você venceu!", true);
+            }
+        }
+
+        // Ends the game and shows the result modal
+        function endGame(message, didPlayerWin) {
+            turnButton.removeEventListener('click', endPlayerTurn);
+            turnButton.addEventListener('click', startGame);
+            turnButton.textContent = 'Novo Duelo';
+            endGameMessage.textContent = message;
+            endGameModal.style.display = 'flex';
+        }
+
+        // Starts the game
+        function startGame() {
+            endGameModal.style.display = 'none';
+            gameState.playerLP = 8000;
+            gameState.opponentLP = 8000;
+            gameState.playerHand = [];
+            gameState.playerGraveyard = [];
+            gameState.opponentGraveyard = [];
+            gameState.playerMonsterField = Array(5).fill(null).map(() => ({ card: null, position: null }));
+            gameState.playerSpellTrapField = Array(5).fill(null).map(() => ({ card: null, position: null }));
+            gameState.opponentMonsterField = Array(5).fill(null).map(() => ({ card: null, position: null }));
+            gameState.opponentSpellTrapField = Array(5).fill(null).map(() => ({ card: null, position: null }));
+            gameState.isPlayerTurn = true;
+            gameState.canNormalSummon = true;
+            
+            turnButton.removeEventListener('click', startGame);
+            turnButton.addEventListener('click', endPlayerTurn);
+            
+            initializeDecks();
+            updateLP();
+            renderField(true);
+            renderField(false);
+            updateDeckInfo();
+            
+            // Draw initial 5 cards
+            for (let i = 0; i < 5; i++) {
+                drawCard(true);
+                drawCard(false);
+            }
+            
+            turnButton.textContent = 'Passar Turno';
+            turnButton.disabled = true;
+            addLogMessage("O jogo começou! É seu turno. Arraste uma carta para o campo.");
+        }
+
+        // Main function to end player's turn and start opponent's
+        function endPlayerTurn() {
+            if (!gameState.isPlayerTurn) return;
+            addLogMessage("Você passou o turno.");
+            gameState.isPlayerTurn = false;
+            turnButton.disabled = true;
+
+            // Inicia a batalha do jogador
+            performBattle(gameState.playerMonsterField, gameState.opponentMonsterField, 'Você', 'O Oponente', false);
+
+            // Opponent's End Phase
+        setTimeout(() => {
+            addLogMessage("Fim do turno do Oponente.");
+            gameState.isPlayerTurn = true;
+            gameState.canNormalSummon = true;
+            turnButton.disabled = false;
+            turnButton.textContent = 'Passar Turno';
+            // Adicionado: O jogador saca uma nova carta no início de seu turno
+            drawCard(true);
+            addLogMessage("É o seu turno. Arraste uma carta para o campo.");
+        }, 6000);
+        }
+
+        // Event listeners for the modal buttons
+        summonAttackBtn.addEventListener('click', () => {
+            summonModal.style.display = 'none';
+            const { card, cardIndexInHand, zoneIndex } = gameState.selectedCard;
+            if (zoneIndex !== undefined && gameState.playerMonsterField[zoneIndex].card === null) {
+                gameState.playerHand.splice(cardIndexInHand, 1);
+                gameState.playerMonsterField[zoneIndex] = { card, position: 'attack' };
+                gameState.canNormalSummon = false;
+                renderField(true);
+                renderHand();
+                addLogMessage(`Você invocou ${card.name} em Posição de Ataque!`);
+            }
+            gameState.selectedCard = null;
+            hideCardPreview();
+            turnButton.disabled = false;
+            turnButton.textContent = 'Passar Turno';
+        });
+
+        summonDefenseBtn.addEventListener('click', () => {
+            summonModal.style.display = 'none';
+            const { card, cardIndexInHand, zoneIndex } = gameState.selectedCard;
+            if (zoneIndex !== undefined && gameState.playerMonsterField[zoneIndex].card === null) {
+                gameState.playerHand.splice(cardIndexInHand, 1);
+                gameState.playerMonsterField[zoneIndex] = { card, position: 'defense' };
+                gameState.canNormalSummon = false;
+                renderField(true);
+                renderHand();
+                addLogMessage(`Você invocou ${card.name} em Posição de Defesa!`);
+            }
+            gameState.selectedCard = null;
+            hideCardPreview();
+            turnButton.disabled = false;
+            turnButton.textContent = 'Passar Turno';
+        });
+
+        closePreviewBtn.addEventListener('click', hideCardPreview);
+        newDuelButton.addEventListener('click', startGame);
+
+        // Event listeners
+        playerDeckEl.addEventListener('click', () => {
+            if (gameState.isPlayerTurn) {
+                addLogMessage("Você não pode sacar cartas do Deck livremente. O turno começa com uma compra.");
+            }
+        });
+        
+        turnButton.addEventListener('click', endPlayerTurn);
+
+        window.onload = startGame;
+    </script>
+</body>
+</html>
